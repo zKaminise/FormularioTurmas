@@ -13,10 +13,30 @@ const FormularioAluno: React.FC = () => {
     nome: "",
     telefone: "",
     transporteEscolar: "",
-    turmasEnum: "TURMA_1A",
+    turmasEnum: "",
     adultosResponsaveis: [{ nome: "", grauParentesco: "" }] as Responsavel[],
   });
+
   const [formEnviado, setFormEnviado] = useState(false);
+
+  const [nomeErro, setNomeErro] = useState("");
+
+  const verificarNomeDisponivel = async (nome: string) => {
+    if (!nome.trim()) return;
+    try {
+      const response = await axios.get("http://localhost:8080/alunos/check-nome", {
+        params: { nome },
+      });
+      if (response.data) {
+        setNomeErro("O aluno já está cadastrado no Sistema, para mudar algo, acione a coordenação");
+      } else {
+        setNomeErro("");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar o nome:", error);
+      setNomeErro("Erro ao verificar o nome. Tente novamente.");
+    }
+  }; 
 
   const handleChange = (
     event: React.ChangeEvent<
@@ -58,9 +78,13 @@ const FormularioAluno: React.FC = () => {
     });
   };
 
-  // Função para enviar o formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (nomeErro) {
+      alert("Corrija os erros antes de enviar o formulário.");
+      return;
+    }
 
     const payload = {
       nome: form.nome,
@@ -87,7 +111,7 @@ const FormularioAluno: React.FC = () => {
       );
       console.log("Resposta do servidor:", response.data);
       alert("Aluno cadastrado com sucesso!");
-      setFormEnviado(true); // Atualiza estado para exibir a mensagem de sucesso
+      setFormEnviado(true);
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
       alert("Erro ao cadastrar aluno. Confira os campos e tente novamente.");
@@ -116,9 +140,9 @@ const FormularioAluno: React.FC = () => {
           <img
             src="./src/assets/LogoSchool.png"
             alt="Logo"
-            style={{ height: "50px", marginRight: "15px" }}
+            style={{ height: "65px", marginRight: "20px" }}
           />
-          <h1 style={{ color: "#007BFF", fontWeight: "bold" }}>
+          <h1 style={{ color: "#007BFF", fontWeight: "bold", marginLeft: "2.5rem"}}>
             Cadastro de Aluno
           </h1>
         </Col>
@@ -128,42 +152,44 @@ const FormularioAluno: React.FC = () => {
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-4" controlId="formNome">
             <Form.Label>
-              <strong>Nome do Aluno</strong>
+              <strong>Nome do Criança</strong>
             </Form.Label>
             <Form.Control
               type="text"
               name="nome"
               value={form.nome}
               onChange={handleChange}
+              onBlur={(e) => verificarNomeDisponivel(e.target.value)}
               placeholder="Digite o nome completo"
               required
             />
+            {nomeErro && <div style={{ color: "red", marginTop: "5px" }}>{nomeErro}</div>}
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="formTelefone">
             <Form.Label>
-              <strong>Telefone</strong>
+              <strong>Telefone do Responsável</strong>
             </Form.Label>
             <Form.Control
               type="text"
               name="telefone"
               value={form.telefone}
               onChange={handleChange}
-              placeholder="Digite o telefone"
+              placeholder="Digite o telefone atualizado do Responsável"
               required
             />
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="formTransporte">
             <Form.Label>
-              <strong>Transporte Escolar</strong>
+              <strong>Transporte Escolar (Caso Tenha)</strong>
             </Form.Label>
             <Form.Control
               as="textarea"
               name="transporteEscolar"
               value={form.transporteEscolar}
               onChange={handleChange}
-              placeholder="Descreva o transporte utilizado"
+              placeholder="Caso a Criança esteja autorizada a ser retirada da escola pelo Transporte Escolar, escreva o Nome do Transportador"
               rows={3}
               required
             />
@@ -171,13 +197,14 @@ const FormularioAluno: React.FC = () => {
 
           <Form.Group className="mb-4" controlId="formTurma">
             <Form.Label>
-              <strong>Turma</strong>
+              <strong>Turma da Criança</strong>
             </Form.Label>
             <Form.Select
               name="turmasEnum"
               value={form.turmasEnum}
               onChange={handleChange}
             >
+              <option value="">Selecione</option>
               <option value="TURMA_1A">Turma 1A</option>
               <option value="TURMA_1B">Turma 1B</option>
               <option value="TURMA_1C">Turma 1C</option>
@@ -210,6 +237,7 @@ const FormularioAluno: React.FC = () => {
           </Form.Group>
 
           <h2 style={{ color: "#007BFF", marginTop: "20px" }}>Responsáveis</h2>
+          <p><strong> A criança está autorizada a ir embora da escola com os seguintes adultos: (mesmo que a criança seja retirada por Transporte escolar, preencher nomes dos adultos que podem retira-la em caso de emergência ou ausência do Transporte Escolar)!</strong></p>
           {form.adultosResponsaveis.map((responsavel, index) => (
             <Card className="p-3 mb-3" key={index}>
               <Row>
@@ -244,6 +272,7 @@ const FormularioAluno: React.FC = () => {
                         )
                       }
                     >
+                      <option value="">Selecione</option>
                       <option value="Pai">Pai</option>
                       <option value="Mae">Mãe</option>
                       <option value="Avo">Avó/Avô</option>
@@ -251,6 +280,7 @@ const FormularioAluno: React.FC = () => {
                       <option value="Irma">Irmã</option>
                       <option value="Tios">Tio/Tia</option>
                       <option value="Primos">Primo/Prima</option>
+                      <option value="TransporteEscolar">Transporte Escolar</option>
                       <option value="Outro">Outro</option>
                     </Form.Select>
                   </Form.Group>
@@ -273,7 +303,7 @@ const FormularioAluno: React.FC = () => {
             onClick={addResponsavel}
             className="w-100 mb-4"
           >
-            Adicionar Responsável
+            Adicionar mais um Responsável
           </Button>
 
           <Button type="submit" variant="primary" className="w-100">
