@@ -24,7 +24,7 @@ const FormularioAluno: React.FC = () => {
   const verificarNomeDisponivel = async (nome: string) => {
     if (!nome.trim()) return;
     try {
-      const response = await axios.get("http://localhost:8080/alunos/check-nome", {
+      const response = await axios.get('https://controledeturmas-production.up.railway.app/alunos/check-nome', {
         params: { nome },
       });
       if (response.data) {
@@ -101,7 +101,7 @@ const FormularioAluno: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/alunos",
+        'https://controledeturmas-production.up.railway.app/alunos',
         payload,
         {
           headers: {
@@ -125,7 +125,7 @@ const FormularioAluno: React.FC = () => {
           Formulário Enviado Com Sucesso, Obrigado!
         </h1>
         <img
-          src="./src/assets/ImagemFinal.webp"
+          src="/ImagemFinal.webp"
           alt="Sucesso"
           style={{ maxWidth: "400px", marginTop: "20px" }}
         />
@@ -138,7 +138,7 @@ const FormularioAluno: React.FC = () => {
       <Row className="mb-4">
         <Col className="d-flex align-items-center">
           <img
-            src="./src/assets/LogoSchool.png"
+            src="/LogoSchool.png"
             alt="Logo"
             style={{ height: "65px", marginRight: "20px" }}
           />
