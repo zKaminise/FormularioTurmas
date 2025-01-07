@@ -152,7 +152,7 @@ const FormularioAluno: React.FC = () => {
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-4" controlId="formNome">
             <Form.Label>
-              <strong>Nome do Criança</strong>
+              <strong>Nome da Criança</strong>
             </Form.Label>
             <Form.Control
               type="text"
