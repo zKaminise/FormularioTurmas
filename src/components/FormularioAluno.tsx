@@ -252,7 +252,7 @@ const FormularioAluno: React.FC = () => {
           {/* Transporte Escolar */}
           <Form.Group className="mb-4" controlId="formTransporte">
             <Form.Label>
-              <strong>Transporte Escolar *</strong>
+              <strong>Transporte Escolar (Caso não tenha, preencher "Não Tem") *</strong>
             </Form.Label>
             <Form.Control
               as="textarea"
