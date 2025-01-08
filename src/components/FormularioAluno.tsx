@@ -18,25 +18,30 @@ const FormularioAluno: React.FC = () => {
   });
 
   const [formEnviado, setFormEnviado] = useState(false);
-
   const [nomeErro, setNomeErro] = useState("");
+  const [telefoneErro, setTelefoneErro] = useState("");
+  const [transporteErro, setTransporteErro] = useState("");
 
   const verificarNomeDisponivel = async (nome: string) => {
     if (!nome.trim()) return;
     try {
-      const response = await axios.get('https://controledeturmas-production.up.railway.app/alunos/check-nome', {
-        params: { nome },
-      });
+      const response = await axios.get(
+        "https://controledeturmas-production.up.railway.app/alunos/check-nome",
+        {
+          params: { nome },
+        }
+      );
       if (response.data) {
-        setNomeErro("O aluno já está cadastrado no Sistema, para mudar algo, acione a coordenação");
+        setNomeErro(
+          "O aluno já está cadastrado no Sistema, acione a coordenação."
+        );
       } else {
         setNomeErro("");
       }
     } catch (error) {
-      console.error("Erro ao verificar o nome:", error);
       setNomeErro("Erro ao verificar o nome. Tente novamente.");
     }
-  }; 
+  };
 
   const handleChange = (
     event: React.ChangeEvent<
@@ -44,7 +49,20 @@ const FormularioAluno: React.FC = () => {
     >
   ) => {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "telefone") {
+      // Formatar telefone como (XX) XXXXX-XXXX
+      let formattedValue = value.replace(/\D/g, ""); // Remove todos os caracteres não numéricos
+      if (formattedValue.length > 2) {
+        formattedValue = `(${formattedValue.slice(
+          0,
+          2
+        )}) ${formattedValue.slice(2, 7)}-${formattedValue.slice(7, 11)}`;
+      }
+      setForm((prev) => ({ ...prev, [name]: formattedValue }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleResponsavelChange = (
@@ -78,17 +96,51 @@ const FormularioAluno: React.FC = () => {
     });
   };
 
+  const validateForm = () => {
+    let isValid = true;
+
+    if (form.nome.trim().length < 3) {
+      setNomeErro("O nome deve ter pelo menos 3 caracteres.");
+      isValid = false;
+    } else {
+      setNomeErro("");
+    }
+
+    if (!/^\(\d{2}\) \d{5}-\d{4}$/.test(form.telefone)) {
+      setTelefoneErro(
+        "O telefone deve digitar somente números e conter DDD e Número Fixo ou Celular (Ex: 34 98765-4321)"
+      );
+      isValid = false;
+    } else {
+      setTelefoneErro("");
+    }
+
+    if (!form.transporteEscolar.trim()) {
+      setTransporteErro(
+        "O campo Transporte Escolar é obrigatório, caso não tenha, preencher (Não Possuo)"
+      );
+      isValid = false;
+    } else {
+      setTransporteErro("");
+    }
+
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (nomeErro) {
-      alert("Corrija os erros antes de enviar o formulário.");
+    if (!validateForm()) {
+      alert("Há campos obrigatórios ainda não preenchidos.");
       return;
     }
 
+    // Sanitizar o telefone para enviar apenas números
+    const telefoneSanitizado = form.telefone.replace(/\D/g, "");
+
     const payload = {
       nome: form.nome,
-      telefone: form.telefone,
+      telefone: telefoneSanitizado,
       transporteEscolar: form.transporteEscolar,
       turmasEnum: form.turmasEnum,
       adultosResponsaveis: form.adultosResponsaveis.map((responsavel) => ({
@@ -101,7 +153,7 @@ const FormularioAluno: React.FC = () => {
 
     try {
       const response = await axios.post(
-        'https://controledeturmas-production.up.railway.app/alunos',
+        "https://controledeturmas-production.up.railway.app/alunos",
         payload,
         {
           headers: {
@@ -142,17 +194,23 @@ const FormularioAluno: React.FC = () => {
             alt="Logo"
             style={{ height: "65px", marginRight: "20px" }}
           />
-          <h1 style={{ color: "#007BFF", fontWeight: "bold", marginLeft: "2.5rem"}}>
+          <h1
+            style={{
+              color: "#007BFF",
+              fontWeight: "bold",
+              marginLeft: "2.5rem",
+            }}
+          >
             Cadastro de Aluno
           </h1>
         </Col>
       </Row>
-
       <Card className="p-4 shadow" style={{ width: "40rem" }}>
         <Form onSubmit={handleSubmit}>
+          {/* Nome */}
           <Form.Group className="mb-4" controlId="formNome">
             <Form.Label>
-              <strong>Nome da Criança</strong>
+              <strong>Nome da Criança *</strong>
             </Form.Label>
             <Form.Control
               type="text"
@@ -162,27 +220,39 @@ const FormularioAluno: React.FC = () => {
               onBlur={(e) => verificarNomeDisponivel(e.target.value)}
               placeholder="Digite o nome completo"
               required
+              style={nomeErro ? { borderColor: "red" } : {}}
             />
-            {nomeErro && <div style={{ color: "red", marginTop: "5px" }}>{nomeErro}</div>}
+            {nomeErro && (
+              <div style={{ color: "red", marginTop: "5px" }}>{nomeErro}</div>
+            )}
           </Form.Group>
 
+          {/* Telefone */}
           <Form.Group className="mb-4" controlId="formTelefone">
             <Form.Label>
-              <strong>Telefone do Responsável</strong>
+              <strong>Telefone do Responsável *</strong>
             </Form.Label>
             <Form.Control
               type="text"
               name="telefone"
               value={form.telefone}
               onChange={handleChange}
-              placeholder="Digite o telefone atualizado do Responsável"
+              placeholder="(XX) XXXXX-XXXX"
+              maxLength={15}
               required
+              style={telefoneErro ? { borderColor: "red" } : {}}
             />
+            {telefoneErro && (
+              <div style={{ color: "red", marginTop: "5px" }}>
+                {telefoneErro}
+              </div>
+            )}
           </Form.Group>
 
+          {/* Transporte Escolar */}
           <Form.Group className="mb-4" controlId="formTransporte">
             <Form.Label>
-              <strong>Transporte Escolar (Caso Tenha)</strong>
+              <strong>Transporte Escolar *</strong>
             </Form.Label>
             <Form.Control
               as="textarea"
@@ -192,7 +262,13 @@ const FormularioAluno: React.FC = () => {
               placeholder="Caso a Criança esteja autorizada a ser retirada da escola pelo Transporte Escolar, escreva o Nome do Transportador"
               rows={3}
               required
+              style={transporteErro ? { borderColor: "red" } : {}}
             />
+            {transporteErro && (
+              <div style={{ color: "red", marginTop: "5px" }}>
+                {transporteErro}
+              </div>
+            )}
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="formTurma">
@@ -237,7 +313,15 @@ const FormularioAluno: React.FC = () => {
           </Form.Group>
 
           <h2 style={{ color: "#007BFF", marginTop: "20px" }}>Responsáveis</h2>
-          <p><strong> A criança está autorizada a ir embora da escola com os seguintes adultos: (mesmo que a criança seja retirada por Transporte escolar, preencher nomes dos adultos que podem retira-la em caso de emergência ou ausência do Transporte Escolar)!</strong></p>
+          <p>
+            <strong>
+              {" "}
+              A criança está autorizada a ir embora da escola com os seguintes
+              adultos: (mesmo que a criança seja retirada por Transporte
+              escolar, preencher nomes dos adultos que podem retira-la em caso
+              de emergência ou ausência do Transporte Escolar)!
+            </strong>
+          </p>
           {form.adultosResponsaveis.map((responsavel, index) => (
             <Card className="p-3 mb-3" key={index}>
               <Row>
@@ -280,7 +364,9 @@ const FormularioAluno: React.FC = () => {
                       <option value="Irma">Irmã</option>
                       <option value="Tios">Tio/Tia</option>
                       <option value="Primos">Primo/Prima</option>
-                      <option value="TransporteEscolar">Transporte Escolar</option>
+                      <option value="TransporteEscolar">
+                        Transporte Escolar
+                      </option>
                       <option value="Outro">Outro</option>
                     </Form.Select>
                   </Form.Group>
