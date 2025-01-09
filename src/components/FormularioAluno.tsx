@@ -21,12 +21,32 @@ const FormularioAluno: React.FC = () => {
   const [nomeErro, setNomeErro] = useState("");
   const [telefoneErro, setTelefoneErro] = useState("");
   const [transporteErro, setTransporteErro] = useState("");
+  const [alunoPodeIrSozinho, setAlunoPodeIrSozinho] = useState(false);
+
+  const isTurmaAutorizadaParaSozinho = (turma: string) => {
+    const turmasPermitidas = [
+      "TURMA_6A",
+      "TURMA_6B",
+      "TURMA_6C",
+      "TURMA_7A",
+      "TURMA_7B",
+      "TURMA_7C",
+      "TURMA_8A",
+      "TURMA_8B",
+      "TURMA_8C",
+      "TURMA_9A",
+      "TURMA_9B",
+      "TURMA_9C",
+    ];
+    return turmasPermitidas.includes(turma);
+  };
 
   const verificarNomeDisponivel = async (nome: string) => {
     if (!nome.trim()) return;
     try {
       const response = await axios.get(
         "https://controledeturmas-production.up.railway.app/alunos/check-nome",
+        // "http://localhost:8080/alunos/check-nome",
         {
           params: { nome },
         }
@@ -49,6 +69,18 @@ const FormularioAluno: React.FC = () => {
     >
   ) => {
     const { name, value } = event.target;
+
+    setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "turmasEnum") {
+      if (isTurmaAutorizadaParaSozinho(value)) {
+        // Se a turma for autorizada, exibe o checkbox desmarcado
+        setAlunoPodeIrSozinho(false);
+      } else {
+        // Se a turma não for autorizada, o checkbox desaparece
+        setAlunoPodeIrSozinho(false);
+      }
+    }
 
     if (name === "telefone") {
       // Formatar telefone como (XX) XXXXX-XXXX
@@ -147,6 +179,7 @@ const FormularioAluno: React.FC = () => {
         nome: responsavel.nome,
         grauParentesco: responsavel.grauParentesco,
       })),
+      alunoPodeIrSozinho: alunoPodeIrSozinho,
     };
 
     console.log("JSON enviado:", JSON.stringify(payload, null, 2));
@@ -154,6 +187,7 @@ const FormularioAluno: React.FC = () => {
     try {
       const response = await axios.post(
         "https://controledeturmas-production.up.railway.app/alunos",
+        // "http://localhost:8080/alunos",
         payload,
         {
           headers: {
@@ -252,7 +286,9 @@ const FormularioAluno: React.FC = () => {
           {/* Transporte Escolar */}
           <Form.Group className="mb-4" controlId="formTransporte">
             <Form.Label>
-              <strong>Transporte Escolar (Caso não tenha, preencher "Não Tem") *</strong>
+              <strong>
+                Transporte Escolar (Caso não tenha, preencher "Não Tem") *
+              </strong>
             </Form.Label>
             <Form.Control
               as="textarea"
@@ -311,6 +347,17 @@ const FormularioAluno: React.FC = () => {
               <option value="TURMA_9C">Turma 9C</option>
             </Form.Select>
           </Form.Group>
+
+          {isTurmaAutorizadaParaSozinho(form.turmasEnum) && (
+            <Form.Group controlId="formIrSozinho" className="mb-4">
+              <Form.Check
+                type="checkbox"
+                label="Aluno pode ir embora sozinho"
+                checked={alunoPodeIrSozinho}
+                onChange={(e) => setAlunoPodeIrSozinho(e.target.checked)}
+              />
+            </Form.Group>
+          )}
 
           <h2 style={{ color: "#007BFF", marginTop: "20px" }}>Responsáveis</h2>
           <p>
